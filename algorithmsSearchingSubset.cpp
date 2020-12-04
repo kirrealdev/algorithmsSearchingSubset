@@ -58,6 +58,9 @@ int searchKMP(string text, string str) {
 
 int searchRK(string text, string str) {
     
+    if(text == "" || str == "") return -1;
+    
+    int simpleNumber = 13;
     unsigned int textLength = text.length();
 	unsigned int strLength = str.length();
     int hashStr = 0;
@@ -65,11 +68,11 @@ int searchRK(string text, string str) {
     int count = 0;
 
     for(int i = 0; i < strLength; i++) {
-        hashStr = hashStr + str[i] * pow(13, i);
+        hashStr = hashStr + str[i] * pow(simpleNumber, i);
     }
 
     for(int i = 0; i < strLength; i++) {
-        hashText = hashText + text[i] * pow(13, i);
+        hashText = hashText + text[i] * pow(simpleNumber, i);
     }
     count = 0;
     for(int j = 0; j < textLength - strLength + 1; j++) {
@@ -87,7 +90,7 @@ int searchRK(string text, string str) {
                 count = -1;
             }  
         } 
-        hashText = (hashText - text[j] * 1) / 13 + text[j + strLength] * pow(13, strLength - 1);
+        hashText = (hashText - text[j] * 1) / simpleNumber + text[j + strLength] * pow(simpleNumber, strLength - 1);
     }
     return -1;
 }
