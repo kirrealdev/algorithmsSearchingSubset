@@ -221,39 +221,42 @@ int main()
 	dataForPlot* naiveSearchData = new dataForPlot[10];
 	for (int i = 0; i < 10; i++) {
 		naiveResults[i] = naiveSearch(FirstString[i], SecondString[i]);
-		cout << "naive answer = " << naiveResults[i].answer << "\n";
-		cout << "naive time = " << naiveResults[i].time << "\n";
+		// cout << "naive answer = " << naiveResults[i].answer << "\n";
+		// cout << "naive time = " << naiveResults[i].time << "\n";
 		
 		naiveSearchData[i].length = FirstString[i].length() + SecondString[i].length();
 		naiveSearchData[i].time = naiveResults[i].time;
 		cout << "naive data length = " << naiveSearchData[i].length << "\n";
 		cout << "naive data time = " << naiveSearchData[i].time << "\n";
+		cout << "-----"  << "\n";
 	}
 	cout << "------------------------------------------"  << "\n";
 	resultOfAlgorithm* rkResults = new resultOfAlgorithm[10];
 	dataForPlot* rkSearchData = new dataForPlot[10];
 	for (int i = 0; i < 10; i++) {
 		rkResults[i] = rk(FirstString[i], SecondString[i]);
-		cout << "rk answer = " << rkResults[i].answer << "\n";
-		cout << "rk time = " << rkResults[i].time << "\n";
+		// cout << "rk answer = " << rkResults[i].answer << "\n";
+		// cout << "rk time = " << rkResults[i].time << "\n";
 		
 		rkSearchData[i].length = FirstString[i].length() + SecondString[i].length();
 		rkSearchData[i].time = rkResults[i].time;
 		cout << "rk data length = " << rkSearchData[i].length << "\n";
 		cout << "rk data time = " << rkSearchData[i].time << "\n";
+		cout << "-----"  << "\n";
 	}
 	cout << "------------------------------------------"  << "\n";
 	resultOfAlgorithm* kmpResults = new resultOfAlgorithm[10];
 	dataForPlot* kmpSearchData = new dataForPlot[10];
 	for (int i = 0; i < 10; i++) {
 		kmpResults[i] = kmp(FirstString[i], SecondString[i]);
-		cout << "kmp answer = " << kmpResults[i].answer << "\n";
-		cout << "kmp time = " << kmpResults[i].time << "\n";
+		// cout << "kmp answer = " << kmpResults[i].answer << "\n";
+		// cout << "kmp time = " << kmpResults[i].time << "\n";
 		
 		kmpSearchData[i].length = FirstString[i].length() + SecondString[i].length();
 		kmpSearchData[i].time = kmpResults[i].time;
 		cout << "kmp data length = " << kmpSearchData[i].length << "\n";
 		cout << "kmp data time = " << kmpSearchData[i].time << "\n";
+		cout << "-----"  << "\n";
 	}
 
     return 0;
