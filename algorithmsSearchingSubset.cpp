@@ -3,6 +3,7 @@
 #include <math.h>
 #include <chrono>
 #include <fstream>
+#include <random>
 using namespace std;
 using namespace chrono;
 
@@ -98,59 +99,117 @@ int mod(int a, int b) {
 	return ret>=0? ret: ret+b; 
 }
 
+bool prime (int n) {
+    
+	for (int i=2; i*i<=n; i++)
+        if (n%i==0)
+            return false;
+    return true;
+}
+int rev_a(int elem, int field, vector<int> &mass_elem, vector<int> &mass_field, int p) {
+	int current = mod(field, elem);
+	if(elem == 1) {
+		return elem;
+	}
+
+	if (current == 1) {
+
+		int new_mass_elem = mass_elem[0] - (field / elem) * mass_elem[1];
+		mass_elem[0] = mass_elem[1];
+		mass_elem[1] = new_mass_elem;
+
+		int new_mass_field = mass_field[0] - (field / elem) * mass_field[1];
+		mass_field[0] = mass_field[1];
+		mass_field[1] = new_mass_field;
+
+		if (new_mass_elem < 0) {
+			return (p - abs(new_mass_elem));
+		}
+		else return new_mass_elem;
+	}
+	else {
+
+		int new_mass_elem = mass_elem[0] - (field / elem) * mass_elem[1];
+		mass_elem[0] = mass_elem[1];
+		mass_elem[1] = new_mass_elem;
+
+		int new_mass_field = mass_field[0] - (field / elem) * mass_field[1];
+		mass_field[0] = mass_field[1];
+		mass_field[1] = new_mass_field;
+
+		rev_a(current, elem, mass_elem, mass_field, p);
+	}
+
+}
+
+
 resultOfAlgorithm rk(string text, string str) {
-	
-    resultOfAlgorithm res;
+
+	resultOfAlgorithm res;
 	res.answer = -1;
 	res.time = -1;
 
-	if(text == "" || str == "") return res;
+	if (text == "" || str == "") return res;
 
 	int n = text.length();
 	int m = str.length();
-	int* H = new int[n];
-	int* A = new int[n];
-	int* anti_A = new int[n];
+	vector<int> H(n);
+	vector<int> A(n);
+	vector<int> anti_A = A;
 	int difference = 0;
-	const int p = 131;
-	int count = 0;
-	int a = 127;
-    long long powerOfA = 1;
-	int curr_hash = 0;
+	int p = n * n;
+	while (!prime(p))
+        p++;
 	
+	cout << "p = " << p << endl;
+	int count = 0;
+	
+	random_device r;
+    default_random_engine e1(r());
+    uniform_int_distribution<int> uniform_dist(0, p-1);
+    int a = uniform_dist(e1);
+	cout << "a = " << a << endl;
+	long long powerOfA = 1;
+	int curr_hash = 0;
+
 	for (int i = 0; i < n; i++) {
 		A[i] = powerOfA;
-        powerOfA = mod((powerOfA * a), p);
+		powerOfA = mod((powerOfA * a), p);
 	}
+
 	
-	for (int i = 0; i < n; i++) {
-		int x = 0;
-		while (((mod((A[i] * x), p)) != 1) && (x < p)) {
-			x++;
-		}
-		anti_A[i] = x;
+	anti_A[0] = 1;
+	for (int i = 1; i < n; i++) {
+		vector<int>fm(2);
+		fm[0] = 0;
+		fm[1] = 1;
+		vector<int>sm(2);
+		sm[0] = 1;
+		sm[1] = 0;
+		anti_A[i] = rev_a(A[i], p, fm, sm, p);
+		cout << "anti_A[" << i << "] = " << anti_A[i] << endl;
 	}
 
 	H[0] = mod((text[0] * 1), p);
 
 	for (int i = 1; i < n; i++) {
-		H[i] = mod((H[i - 1] + int(text[i]*A[i])), p);
-		
+		H[i] = mod((H[i - 1] + int(text[i] * A[i])), p);
+
 	}
-	
+
 	int P_hash = 0;
 	for (int i = 0; i < m; i++) {
 		P_hash = mod((P_hash + (str[i] * A[i])), p);
 	}
-	
+
 	auto start = system_clock::now();
 
 	curr_hash = mod(H[m - 1], p);
 	if (curr_hash == P_hash) {
 		for (int k = 0; k < m; k++) {
-			if (str[k] == text[k]) 
+			if (str[k] == text[k])
 				count++;
-			}
+		}
 		if (count == m) {
 			auto end = system_clock::now();
 			duration<double, milli> sec = end - start;
@@ -159,18 +218,18 @@ resultOfAlgorithm rk(string text, string str) {
 			return res;
 		}
 		else
-			count = -1; 
+			count = -1;
 	}
 
 	for (int j = m; j < n; j++) {
 		count = 0;
 		int i = j - m;
-	
+
 		curr_hash = mod((H[j] - H[i])* anti_A[i + 1], p);
-		
+
 		if (curr_hash == P_hash) {
 			for (int k = 0; k < m; k++) {
-				if (str[k] == text[k + i + 1]) 
+				if (str[k] == text[k + i + 1])
 					count++;
 			}
 			if (count == m) {
@@ -184,15 +243,46 @@ resultOfAlgorithm rk(string text, string str) {
 				count = -1;
 		}
 	}
-	
+
 	return res;
 }
 
+resultOfAlgorithm launchMethods(string firstStr, string secondStr, int methodNumber) {
+	
+	resultOfAlgorithm res;
+
+	if(methodNumber == 0) {
+		auto start = system_clock::now();
+		res = naiveSearch(firstStr, secondStr);
+		auto end = system_clock::now();
+		duration<double, milli> sec = end - start;
+		res.time = sec.count();
+		return res;
+	}
+	else if(methodNumber == 1) {
+		auto start = system_clock::now();
+		res = kmp(firstStr, secondStr);
+		auto end = system_clock::now();
+		duration<double, milli> sec = end - start;
+		res.time = sec.count();
+		return res;
+	}
+	else {
+		auto start = system_clock::now();
+		res = rk(firstStr, secondStr);
+		auto end = system_clock::now();
+		duration<double, milli> sec = end - start;
+		res.time = sec.count();
+		return res;
+	}
+
+}
 int main()
 {	
-	string* FirstString = new string[10];
-	string* SecondStringTest1 = new string[10];
-	string* SecondStringTest2 = new string[10];
+	
+	string FirstString[10];
+	string SecondStringTest1[10];
+	string SecondStringTest2[10];
 	
 	FirstString[0] = "abcdefghijklmnop"; //16
 	SecondStringTest1[0] = "mnop";
@@ -233,113 +323,129 @@ int main()
 	FirstString[9] = "Я помню чудное мгновенье: передо мной явилась ты, как мимолетное виденье, как гений чистой красоты."; // 99
 	SecondStringTest1[9] = "как гений чистой красоты.";
 	SecondStringTest2[9] = "ты, как мимолетное виденье";
-	
-	ofstream fout;
-  	fout.open("results.txt");
-	fout << "+++++++++++++++++++++++++++++++PART A+++++++++++++++++++++++++++++++++++" << endl;
-	fout << "NAIVE ALGORIHTM:" << endl;
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
-		
-		fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << naiveSearch(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << naiveSearch(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
-	}
-	
-	fout << "--------------------------------------------------------------------------------" << endl;
-	fout << "RK ALGORIHTM:" << endl;
-	
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
-		
-		fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << rk(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << rk(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
-	}
-	
-	fout << "--------------------------------------------------------------------------------" << endl;
-	fout << "KMP ALGORIHTM:" << endl;
-	
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
-		
-		fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << kmp(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << kmp(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
+
+	for (int i = 0; i < 10; i++) { 
+		resultOfAlgorithm naiveRes = launchMethods(FirstString[i], SecondStringTest1[i], 0);
+		cout << "Naive ans = " << naiveRes.answer << ", Naive time = " << naiveRes.time << endl;
+
+		resultOfAlgorithm kmpRes = launchMethods(FirstString[i], SecondStringTest1[i], 1);
+		cout << "KMP ans = " << kmpRes.answer << ", KMP time = " << kmpRes.time << endl;
+
+		resultOfAlgorithm rkRes = launchMethods(FirstString[i], SecondStringTest1[i], 2);
+		cout << "RK ans = " << rkRes.answer << ", RK time = " << rkRes.time << endl;
+		cout << "-------------" << endl;
 	}
 
-	fout << "+++++++++++++++++++++++++++++++PART B+++++++++++++++++++++++++++++++++++" << endl;
-	string* FirstString2 = new string[10];
-	string* SecondStringTest4 = new string[10];
-	string* SecondStringTest5 = new string[10];
+
 	
-	FirstString2[0] = "fskjfjsdkfjsdjkf"; //16
-	SecondStringTest4[0] = "djkf";
-	SecondStringTest5[0] = "sdkf";
+	// ofstream fout;
+  	// fout.open("results.txt");
+	// fout << "+++++++++++++++++++++++++++++++PART A+++++++++++++++++++++++++++++++++++" << endl;
+	// fout << "NAIVE ALGORIHTM:" << endl;
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
+		
+	// 	fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << naiveSearch(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << naiveSearch(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
+	// }
 	
-	FirstString2[1] = "fskjfjsdkfjsdjkfweiowdmb"; //24
-	SecondStringTest4[1] = "iowdmb";
-	SecondStringTest5[1] = "dkfjsd";
+	// fout << "--------------------------------------------------------------------------------" << endl;
+	// fout << "RK ALGORIHTM:" << endl;
 	
-	FirstString2[2] = "fskjfjsdkfjsdjkfweiowdmboppaqaax"; //32
-	SecondStringTest4[2] = "oppaqaax";
-	SecondStringTest5[2] = "kfjsdjkf";
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
+		
+	// 	fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << rk(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << rk(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
+	// }
 	
-	FirstString2[3] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvv"; //40
-	SecondStringTest4[3] = "axzzxxccvv";
-	SecondStringTest5[3] = "jsdjkfweio";
+	// fout << "--------------------------------------------------------------------------------" << endl;
+	// fout << "KMP ALGORIHTM:" << endl;
 	
-	FirstString2[4] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighik"; //48
-	SecondStringTest4[4] = "ccvvyuyighik";
-	SecondStringTest5[4] = "weiowdmboppa";
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
+		
+	// 	fout << "end: " << "(" << FirstString[i].length() + SecondStringTest1[i].length() << ", " << kmp(FirstString[i], SecondStringTest1[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString[i].length() + SecondStringTest2[i].length() << ", " << kmp(FirstString[i], SecondStringTest2[i]).time << ")" << endl;
+	// }
+
+	// fout << "+++++++++++++++++++++++++++++++PART B+++++++++++++++++++++++++++++++++++" << endl;
+	// string FirstString2[10];
+	// string SecondStringTest4[10];
+	// string SecondStringTest5[10];
 	
-	FirstString2[5] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolop"; //56
-	SecondStringTest4[5] = "yighikalllolop";
-	SecondStringTest5[5] = "iowdmboppaqaax";
+	// FirstString2[0] = "fskjfjsdkfjsdjkf"; //16
+	// SecondStringTest4[0] = "djkf";
+	// SecondStringTest5[0] = "sdkf";
 	
-	FirstString2[6] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfs";//64
-	SecondStringTest4[6] = "alllolophgfdjkfs";
-	SecondStringTest5[6] = "boppaqaaxzzxxccv";
+	// FirstString2[1] = "fskjfjsdkfjsdjkfweiowdmb"; //24
+	// SecondStringTest4[1] = "iowdmb";
+	// SecondStringTest5[1] = "dkfjsd";
 	
-	FirstString2[7] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcdde"; //72
-	SecondStringTest4[7] = "ophgfdjkfsnmbvcdde";
-	SecondStringTest5[7] = "dmboppaqaaxzzxxccv";
+	// FirstString2[2] = "fskjfjsdkfjsdjkfweiowdmboppaqaax"; //32
+	// SecondStringTest4[2] = "oppaqaax";
+	// SecondStringTest5[2] = "kfjsdjkf";
 	
-	FirstString2[8] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcddecnjaskas"; //80
-	SecondStringTest4[8] = "jkfsnmbvcddecnjaskas";
-	SecondStringTest5[8] = "ccvvyuyighikalllolop";
+	// FirstString2[3] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvv"; //40
+	// SecondStringTest4[3] = "axzzxxccvv";
+	// SecondStringTest5[3] = "jsdjkfweio";
 	
-	FirstString2[9] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcddecnjaskasxcasdfsd"; // 88
-	SecondStringTest4[9] = "bvcddecnjaskasxcasdfsd";
-	SecondStringTest5[9] = "axzzxxccvvyuyighikalll";
+	// FirstString2[4] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighik"; //48
+	// SecondStringTest4[4] = "ccvvyuyighik";
+	// SecondStringTest5[4] = "weiowdmboppa";
+	
+	// FirstString2[5] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolop"; //56
+	// SecondStringTest4[5] = "yighikalllolop";
+	// SecondStringTest5[5] = "iowdmboppaqaax";
+	
+	// FirstString2[6] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfs";//64
+	// SecondStringTest4[6] = "alllolophgfdjkfs";
+	// SecondStringTest5[6] = "boppaqaaxzzxxccv";
+	
+	// FirstString2[7] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcdde"; //72
+	// SecondStringTest4[7] = "ophgfdjkfsnmbvcdde";
+	// SecondStringTest5[7] = "dmboppaqaaxzzxxccv";
+	
+	// FirstString2[8] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcddecnjaskas"; //80
+	// SecondStringTest4[8] = "jkfsnmbvcddecnjaskas";
+	// SecondStringTest5[8] = "ccvvyuyighikalllolop";
+	
+	// FirstString2[9] = "fskjfjsdkfjsdjkfweiowdmboppaqaaxzzxxccvvyuyighikalllolophgfdjkfsnmbvcddecnjaskasxcasdfsd"; // 88
+	// SecondStringTest4[9] = "bvcddecnjaskasxcasdfsd";
+	// SecondStringTest5[9] = "axzzxxccvvyuyighikalll";
+
+	
   	
-	fout << "NAIVE ALGORIHTM:" << endl;
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
+	// fout << "NAIVE ALGORIHTM:" << endl;
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
 		
-		fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << naiveSearch(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << naiveSearch(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
-	}
+	// 	fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << naiveSearch(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << naiveSearch(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
+	// }
 	
-	fout << "--------------------------------------------------------------------------------" << endl;
-	fout << "RK ALGORIHTM:" << endl;
+	// fout << "--------------------------------------------------------------------------------" << endl;
+	// fout << "RK ALGORIHTM:" << endl;
 
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
 		
-		fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << rk(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << rk(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
-	}
+	// 	fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << rk(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << rk(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
+	// }
 	
-	fout << "--------------------------------------------------------------------------------" << endl;
-	fout << "KMP ALGORIHTM:" << endl;
+	// fout << "--------------------------------------------------------------------------------" << endl;
+	// fout << "KMP ALGORIHTM:" << endl;
 
 
-	for (int i = 0; i < 10; i++) {
-		fout << "<< test #" << i << " >>" << endl;
+	// for (int i = 0; i < 10; i++) {
+	// 	fout << "<< test #" << i << " >>" << endl;
 		
-		fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << kmp(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
-		fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << kmp(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
-	}
+	// 	fout << "end: " << "(" << FirstString2[i].length() + SecondStringTest4[i].length() << ", " << kmp(FirstString2[i], SecondStringTest4[i]).time << ")" << endl;
+	// 	fout << "middle: " << "(" << FirstString2[i].length() + SecondStringTest5[i].length() << ", " << kmp(FirstString2[i], SecondStringTest5[i]).time << ")" << endl;
+	// }
 
-	fout.close();
+	// fout.close();
     
 	return 0;
 }
