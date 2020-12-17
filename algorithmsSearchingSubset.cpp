@@ -106,6 +106,13 @@ bool prime (int n) {
             return false;
     return true;
 }
+
+int doSimpleNumber (int n) {
+	while (!prime(n))
+        n++;
+	return n;
+
+}
 int rev_a(int elem, int field, vector<int> &mass_elem, vector<int> &mass_field, int p) {
 	int current = mod(field, elem);
 	if(elem == 1) {
@@ -139,7 +146,6 @@ int rev_a(int elem, int field, vector<int> &mass_elem, vector<int> &mass_field, 
 
 		rev_a(current, elem, mass_elem, mass_field, p);
 	}
-
 }
 
 
@@ -157,18 +163,14 @@ resultOfAlgorithm rk(string text, string str) {
 	vector<int> A(n);
 	vector<int> anti_A = A;
 	int difference = 0;
-	int p = n * n;
-	while (!prime(p))
-        p++;
-	
-	cout << "p = " << p << endl;
+	int p = doSimpleNumber(n * n);
 	int count = 0;
 	
 	random_device r;
     default_random_engine e1(r());
     uniform_int_distribution<int> uniform_dist(0, p-1);
     int a = uniform_dist(e1);
-	cout << "a = " << a << endl;
+
 	long long powerOfA = 1;
 	int curr_hash = 0;
 
@@ -187,7 +189,6 @@ resultOfAlgorithm rk(string text, string str) {
 		sm[0] = 1;
 		sm[1] = 0;
 		anti_A[i] = rev_a(A[i], p, fm, sm, p);
-		cout << "anti_A[" << i << "] = " << anti_A[i] << endl;
 	}
 
 	H[0] = mod((text[0] * 1), p);
